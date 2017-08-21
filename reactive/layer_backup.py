@@ -17,8 +17,6 @@ class Backup:
         hookenv.log('Creating backup', 'INFO')
         backup_file = (self.charm_config['backup-location'] + '/' +
                        self.layer_options['backup-name'] + '-{}'.format(datetime.datetime.now()))
-        # backup_file = self.charm_config['backup-location'] + '/couchback-{}.tgz'.format(datetime.datetime.now())
-        # backup_file = backup_file.replace(':', '-')
         try:
             os.mkdir(self.charm_config['backup-location'])
         except FileExistsError:
@@ -26,10 +24,8 @@ class Backup:
     
         with tarfile.open(backup_file, 'x:gz') as outFile:
             for addfile in self.layer_options['backup-files'].split(','):
-                addfile = addfile.format(**self.charm_conifg)
+                addfile = addfile.format(**self.charm_config)
                 outFile.add(addfile, arcname=addfile.split('/')[-1])
-            # outFile.add(self.database_dir, arcname=self.database_dir.split('/')[-1])
-            # outFile.add(self.settings_file, arcname=self.settings_file.split('/')[-1])
     
         # Clean up backups
         if self.charm_config['backup-count'] > 0:
