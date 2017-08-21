@@ -17,6 +17,7 @@ class Backup:
         hookenv.log('Creating backup', 'INFO')
         backup_file = (self.charm_config['backup-location'] + '/' +
                        self.layer_options['backup-name'] + '-{}'.format(datetime.datetime.now()))
+        backup_file = backup_file.replace(':', '-') + '.tgz'
         try:
             os.mkdir(self.charm_config['backup-location'])
         except FileExistsError:
