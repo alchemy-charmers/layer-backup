@@ -23,8 +23,9 @@ class Backup:
             pass
     
         with tarfile.open(backup_file, 'x:gz') as outFile:
+            hookenv.log('Processing files: {}'.format(self.layer_options['backup-files'], 'DEBUG'))
             for addfile in self.layer_options['backup-files'].split(','):
-                addfile = addfile.format(**self.charm_config)
+                addfile = addfile.format(**self.charm_config).strip()
                 outFile.add(addfile, arcname=addfile.split('/')[-1])
     
         # Clean up backups
@@ -55,7 +56,7 @@ class Backup:
     def remove_backup_cron(self, log=True):
         system_cron = CronTab(user='root')
         try:
-            job = next(system_cron.find_comment("couchpotato backup"))
+            job = next(system_cron.find_comment("backup cron"))
             system_cron.remove(job)
             system_cron.write()
             if log:
