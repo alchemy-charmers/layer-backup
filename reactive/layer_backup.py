@@ -25,7 +25,7 @@ class Backup:
     
         with tarfile.open(backup_file, 'x:gz') as outFile:
             hookenv.log('Processing files: {}'.format(self.layer_options['backup-files'], 'DEBUG'))
-            for addfile in self.layer_options['backup-files'].split(','):
+            for addfile in self.layer_options['backup-files'].split(' '):
                 addfile = addfile.format(**self.charm_config).strip()
                 outFile.add(addfile, arcname=addfile.split('/')[-1])
     
