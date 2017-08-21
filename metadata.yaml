@@ -1,19 +1,21 @@
-name: layer-backup
-summary: <Fill in summary here>
-maintainer: Chris <Chris@chris-XPS-15-9550>
+name: backup
+summary: Provides cron based tgz creation for specified files and folders
+maintainer: Chris Sanders <sanders.chris@gmail.com>
 description: |
-  <Multi-line description here>
+  Provides cron based tgz creation for specified files and folders
 tags:
   # Replace "misc" with one or more whitelisted tags from this list:
   # https://jujucharms.com/docs/stable/authors-charm-metadata
   - misc
 subordinate: false
-provides:
-  provides-relation:
-    interface: interface-name
-requires:
-  requires-relation:
-    interface: interface-name
-peers:
-  peer-relation:
-    interface: interface-name
+series:
+  - xenial
+# provides:
+#   provides-relation:
+#     interface: interface-name
+# requires:
+#   requires-relation:
+#     interface: interface-name
+# peers:
+#   peer-relation:
+#     interface: interface-name
