@@ -1,0 +1,28 @@
+options:
+  backup-count:
+    type: int
+    default: 0
+    description: "Number of backups to keep"
+  backup-cron:
+    type: string
+    default: "@daily"
+    description: "Interval to create backup, takes a cron compatible string"
+  backup-location:
+    type: string
+    default: ""
+    description: "Location to store backups"
+
+# options:
+#   string-option:
+#     type: string
+#     default: "Default Value"
+#     description: "A short description of the configuration option"
+#   boolean-option:
+#     type: boolean
+#     default: False
+#     description: "A short description of the configuration option"
+#   int-option:
+#     type: int
+#     default: 9001
+#     description: "A short description of the configuration option"
+

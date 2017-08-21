@@ -1,0 +1,89 @@
+from charms.reactive import when_not, when_any, when, set_state
+from charmhelpers.core import hookenv
+from charms import layer
+from crontab import CronTab
+
+import tarfile
+import datetime
+import os
+
+
+class Backup:
+    def __init__(self):
+        self.layer_options = layer.options('backup')
+        self.charm_config = hookenv.config()
+
+    def backup(self):
+        hookenv.log('Creating backup', 'INFO')
+        backup_file = (self.charm_config['backup-location'] + '/' +
+                       self.layer_options['backup-name'] + '-{}'.format(datetime.datetime.now()))
+        # backup_file = self.charm_config['backup-location'] + '/couchback-{}.tgz'.format(datetime.datetime.now())
+        # backup_file = backup_file.replace(':', '-')
+        try:
+            os.mkdir(self.charm_config['backup-location'])
+        except FileExistsError:
+            pass
+    
+        with tarfile.open(backup_file, 'x:gz') as outFile:
+            for addfile in self.layer_options['backup-files'].split(','):
+                addfile = addfile.format(**self.charm_conifg)
+                outFile.add(addfile, arcname=addfile.split('/')[-1])
+            # outFile.add(self.database_dir, arcname=self.database_dir.split('/')[-1])
+            # outFile.add(self.settings_file, arcname=self.settings_file.split('/')[-1])
+    
+        # Clean up backups
+        if self.charm_config['backup-count'] > 0:
+            hookenv.log('Pruning files in {}'.format(self.charm_config['backup-location']), 'INFO')
+    
+            def mtime(x): 
+                return os.stat(os.path.join(self.charm_config['backup-location'], x)).st_mtime 
+            sortedFiles = sorted(os.listdir(self.charm_config['backup-location']), key=mtime)
+            deleteCount = max(len(sortedFiles) - self.charm_config['backup-count'], 0)
+            for file in sortedFiles[0:deleteCount]:
+                os.remove(os.path.join(self.charm_config['backup-location'], file))
+        else:
+            hookenv.log('Skipping backup pruning', 'INFO')
+    
+    def create_backup_cron(self):
+        self.remove_backup_cron(log=False)
+        system_cron = CronTab(user='root')
+        unit = hookenv.local_unit()
+        directory = hookenv.charm_dir()
+        action = directory + '/actions/backup' 
+        command = "juju-run {unit} {action}".format(unit=unit, action=action)
+        job = system_cron.new(command=command, comment="backup cron")
+        job.setall(self.charm_config['backup-cron'])
+        system_cron.write()
+        hookenv.log("Backup created for: {}".format(self.charm_config['backup-cron']))
+    
+    def remove_backup_cron(self, log=True):
+        system_cron = CronTab(user='root')
+        try:
+            job = next(system_cron.find_comment("couchpotato backup"))
+            system_cron.remove(job)
+            system_cron.write()
+            if log:
+                hookenv.log("Removed backup cron.", 'INFO')
+        except StopIteration:
+            if log:
+                hookenv.log("Backup removal called, but cron not present.", 'WARNING')
+
+
+backup = Backup()
+
+
+@when_not('layer-backup.installed')
+def install_layer_backup():
+    if backup.charm_config['backup-location'] != '':
+        backup.create_backup_cron()
+    set_state('layer-backup.installed')
+
+
+@when_any('config.changed.backup-location', 'config.changed.backup-cron')
+@when('layer-backup.installed')
+def update_backup_cron():
+    if backup.charm_config['backup-location'] == '':
+        backup.remove_backup_cron()
+    else:
+        backup.create_backup_cron()
+

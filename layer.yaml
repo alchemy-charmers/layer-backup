@@ -1,0 +1,10 @@
+includes: ['layer:basic']  # if you use any interfaces, add them here
+defines:
+  backup-name:
+    type: string
+    default: "backup"
+    description: "Name of the bakcup files to create"
+  backup-files:
+    type: string
+    default: ""
+    description: "Comma seperated list of files to include, must be full path, can use charm conifg variables"

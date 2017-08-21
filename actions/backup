@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+
+# import sys
+from layer_backup import backup
+
+backup.backup()
+
+# try:
+#     from libcouch import CouchInfo
+# except:
+#     sys.path.append('lib')
+#     from libcouch import CouchInfo
+
+# cp = CouchInfo()
+# cp.backup()
