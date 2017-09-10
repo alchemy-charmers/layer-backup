@@ -14,6 +14,10 @@ class Backup:
         self.charm_config = hookenv.config()
 
     def backup(self):
+        if self.charm_config['backup-location'] == '':
+            hookenv.action_fail("No backup-location set")
+            hookenv.log('No backup location set, can\'t run backup', 'ERROR')
+            return
         hookenv.log('Creating backup', 'INFO')
         backup_file = (self.charm_config['backup-location'] + '/' +
                        self.layer_options['backup-name'] + '-{}'.format(datetime.datetime.now()))
