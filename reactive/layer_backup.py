@@ -6,6 +6,8 @@ from crontab import CronTab
 import tarfile
 import datetime
 import os
+import dirsync
+import logging
 
 
 class Backup:
@@ -19,6 +21,27 @@ class Backup:
             hookenv.log('No backup location set, can\'t run backup', 'ERROR')
             return
         hookenv.log('Creating backup', 'INFO')
+        if self.layer_options['backup-method'] == 'tgz':
+            self._tgz_backup()
+        elif self.layer_options['backup-method'] == 'sync':
+            self._sync_backup()
+        else:
+            hookenv.action_fail("backup-method invalid")
+            hookenv.log('Layer option for backup-method is not valid.', 'ERROR')
+            return
+
+    def _sync_backup(self):
+        options = {'purge': True, 'create': True}
+        logger = logging.getLogger('syncLogger')
+        logger.setLevel(logging.ERROR)
+        result = dirsync.sync(self.layer_options['backup-files'].format(**self.charm_config).strip(),
+                              self.charm_config['backup-location'].strip(),
+                              'sync',
+                              logger=logger,
+                              **options)
+        hookenv.log('Files synced: {}'.format(result), 'INFO')
+   
+    def _tgz_backup(self):
         backup_file = (self.charm_config['backup-location'] + '/' +
                        self.layer_options['backup-name'] + '-{}'.format(datetime.datetime.now()))
         backup_file = backup_file.replace(':', '-') + '.tgz'
@@ -26,17 +49,17 @@ class Backup:
             os.mkdir(self.charm_config['backup-location'])
         except FileExistsError:
             pass
-    
+        
         with tarfile.open(backup_file, 'x:gz') as outFile:
             hookenv.log('Processing files: {}'.format(self.layer_options['backup-files'], 'DEBUG'))
             for addfile in self.layer_options['backup-files'].split(' '):
                 addfile = addfile.format(**self.charm_config).strip()
                 outFile.add(addfile, arcname=addfile.split('/')[-1])
-    
+        
         # Clean up backups
         if self.charm_config['backup-count'] > 0:
             hookenv.log('Pruning files in {}'.format(self.charm_config['backup-location']), 'INFO')
-    
+        
             def mtime(x): 
                 return os.stat(os.path.join(self.charm_config['backup-location'], x)).st_mtime 
             sortedFiles = sorted(os.listdir(self.charm_config['backup-location']), key=mtime)
@@ -45,7 +68,7 @@ class Backup:
                 os.remove(os.path.join(self.charm_config['backup-location'], file))
         else:
             hookenv.log('Skipping backup pruning', 'INFO')
-    
+ 
     def create_backup_cron(self):
         self.remove_backup_cron(log=False)
         system_cron = CronTab(user='root')

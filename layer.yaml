@@ -7,4 +7,8 @@ defines:
   backup-files:
     type: string
     default: ""
-    description: "Comma seperated list of files to include, must be full path, can use charm conifg variables"
+    description: "List of files to include, must be full path, can use charm conifg variables"
+  backup-method:
+    type: string
+    default: "tgz"
+    description: "The method for backup: tbz or sync"
