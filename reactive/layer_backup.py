@@ -40,7 +40,7 @@ class Backup:
                               logger=logger,
                               **options)
         hookenv.log('Files synced: {}'.format(result), 'INFO')
-   
+
     def _tgz_backup(self):
         backup_file = (self.charm_config['backup-location'] + '/' +
                        self.layer_options['backup-name'] + '-{}'.format(datetime.datetime.now()))
@@ -49,38 +49,38 @@ class Backup:
             os.mkdir(self.charm_config['backup-location'])
         except FileExistsError:
             pass
-        
+
         with tarfile.open(backup_file, 'x:gz') as outFile:
             hookenv.log('Processing files: {}'.format(self.layer_options['backup-files'], 'DEBUG'))
-            for addfile in self.layer_options['backup-files'].split(' '):
+            for addfile in self.layer_options['backup-files'].split('\n'):
                 addfile = addfile.format(**self.charm_config).strip()
                 outFile.add(addfile, arcname=addfile.split('/')[-1])
-        
+
         # Clean up backups
         if self.charm_config['backup-count'] > 0:
             hookenv.log('Pruning files in {}'.format(self.charm_config['backup-location']), 'INFO')
-        
-            def mtime(x): 
-                return os.stat(os.path.join(self.charm_config['backup-location'], x)).st_mtime 
+
+            def mtime(x):
+                return os.stat(os.path.join(self.charm_config['backup-location'], x)).st_mtime
             sortedFiles = sorted(os.listdir(self.charm_config['backup-location']), key=mtime)
             deleteCount = max(len(sortedFiles) - self.charm_config['backup-count'], 0)
             for file in sortedFiles[0:deleteCount]:
                 os.remove(os.path.join(self.charm_config['backup-location'], file))
         else:
             hookenv.log('Skipping backup pruning', 'INFO')
- 
+
     def create_backup_cron(self):
         self.remove_backup_cron(log=False)
         system_cron = CronTab(user='root')
         unit = hookenv.local_unit()
         directory = hookenv.charm_dir()
-        action = directory + '/actions/backup' 
+        action = directory + '/actions/backup'
         command = "juju-run {unit} {action}".format(unit=unit, action=action)
         job = system_cron.new(command=command, comment="backup cron")
         job.setall(self.charm_config['backup-cron'])
         system_cron.write()
         hookenv.log("Backup created for: {}".format(self.charm_config['backup-cron']))
-    
+
     def remove_backup_cron(self, log=True):
         system_cron = CronTab(user='root')
         try:
